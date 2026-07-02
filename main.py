@@ -427,42 +427,28 @@ def check_card():
     }
     response = r.post(url, data=payload, headers=headers)
     
-    response_text_lower = response.text.lower()
+    response_text = response.text
     
-    if re.search(r'nice', response_text_lower):
-        result = "Approved ✅"
-    elif re.search(r'avs', response_text_lower):
-        result = "Approved ✅"
-    elif re.search(r'added', response_text_lower):
-        result = "Approved ✅"
-    elif re.search(r'successfully', response_text_lower):
-        result = "Approved ✅"
-    elif re.search(r'thank you', response_text_lower):
-        result = "Approved ✅"
-    elif re.search(r'order received', response_text_lower):
-        result = "Approved ✅"
-    elif re.search(r'payment method added', response_text_lower):
-        result = "Approved ✅"
-    elif re.search(r'your order is complete', response_text_lower):
+    if re.search(r'(?i)avs', response_text) or re.search(r'(?i)nice', response_text):
         result = "Approved ✅"
     else:
-        soup = BeautifulSoup(response.text, 'html.parser')
+        soup = BeautifulSoup(response_text, 'html.parser')
         error_element = soup.find('ul', class_='woocommerce-error')
         error_message = None
         if error_element:
             li_items = error_element.find_all('li')
+            error_messages = []
             for li in li_items:
                 text = li.text.strip()
-                if 'Status code' in text or 'error' in text.lower():
-                    error_message = text
-                    break
-            if not error_message and li_items:
-                error_message = li_items[0].text.strip()
+                if text:
+                    error_messages.append(text)
+            if error_messages:
+                error_message = " | ".join(error_messages)
         
         if error_message:
             result = f"Declined ❌: {error_message}"
         else:
-            result = "Unknown error ❌"
+            result = "Declined ❌: Unknown error"
     
     return jsonify({
         'result': result,
