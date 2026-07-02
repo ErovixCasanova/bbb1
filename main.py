@@ -101,31 +101,47 @@ def check_card():
         r.proxies.update(proxy_dict)
     
     url = "https://silvercellwireless.com"
+    
     params = {
-        'wc-ajax': "add_to_cart"
-    }
+  'add-to-cart': "893",
+  'variation_id': "1510",
+  'quantity': "1",
+  'wpo-option[option-103]': "a-SnPa5atkwOOgWbTGB8H",
+  'wpo-hidden-fields': "1",
+  'attribute_pa_condition': "certified-phone",
+  'custom_product_id': "885",
+  'quantity': "1",
+  'gtm4wp_product_data': "{\"internal_id\":893,\"item_id\":893,\"item_name\":\"Orbic Simple Flip\",\"sku\":893,\"price\":19,\"stocklevel\":null,\"stockstatus\":\"instock\",\"google_business_vertical\":\"retail\",\"item_category\":\"Phones\",\"item_category2\":\"Basic\",\"id\":893}",
+  'add-to-cart': "893",
+  'product_id': "893",
+  'variation_id': "1510"
+}
+
     payload = {
-        'success_message': "Travel+Wall+Charger+Type+C+has+been+added+to+your+cart",
-        'product_sku': "travel_wall_charger_typec",
-        'product_id': "1232",
-        'quantity': "1"
-    }
+  'success_message': "“Travel+Wall+Charger+Type+C”+has+been+added+to+your+cart",
+  'product_sku': "travel_wall_charger_typec",
+  'product_id': "1232",
+  'quantity': "1"
+}
+
     headers = {
-        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36",
-        'Accept': "application/json, text/javascript, */*; q=0.01",
-        'sec-ch-ua-platform': "\"Android\"",
-        'x-requested-with': "XMLHttpRequest",
-        'sec-ch-ua': "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
-        'sec-ch-ua-mobile': "?1",
-        'origin': "https://silvercellwireless.com",
-        'sec-fetch-site': "same-origin",
-        'sec-fetch-mode': "cors",
-        'sec-fetch-dest': "empty",
-        'referer': "https://silvercellwireless.com/shop/page/2/",
-        'accept-language': "en-IN,en;q=0.9,bn-IN;q=0.8,bn;q=0.7,en-GB;q=0.6,en-US;q=0.5",
-        'priority': "u=1, i",
-    }
-    response = r.post(url, params=params, data=payload, headers=headers)
+  'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+  'Accept': "application/json, text/javascript, */*; q=0.01",
+  'sec-ch-ua-platform': "\"Windows\"",
+  'x-requested-with': "XMLHttpRequest",
+  'sec-ch-ua': "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+  'sec-ch-ua-mobile': "?1",
+  'origin': "https://silvercellwireless.com",
+  'sec-fetch-site': "same-origin",
+  'sec-fetch-mode': "cors",
+  'sec-fetch-dest': "empty",
+#  'referer': "https://silvercellwireless.com/shop/page/2/",
+  'accept-language': "en-US,en;q=0.9",
+  'priority': "u=1, i",
+}
+
+    response = r.post(url, params=params, headers=headers)
+
     
     url = "https://silvercellwireless.com/checkout/"
     headers = {
