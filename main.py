@@ -101,23 +101,35 @@ def check_card():
         r.proxies.update(proxy_dict)
     
     url = "https://silvercellwireless.com"
-    params = {'add-to-cart': "1203", 'quantity': "1"}
-    headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
-        'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        'sec-ch-ua': "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
-        'sec-ch-ua-mobile': "?0",
-        'sec-ch-ua-platform': "\"Windows\"",
-        'upgrade-insecure-requests': "1",
-        'sec-fetch-site': "same-origin",
-        'sec-fetch-mode': "navigate",
-        'sec-fetch-user': "?1",
-        'sec-fetch-dest': "document",
-        'referer': "https://silvercellwireless.com/shop/accessories/1203/",
-        'accept-language': "en-US,en;q=0.9",
-        'priority': "u=0, i",
+
+    params = {
+  'wc-ajax': "add_to_cart"
     }
-    response = r.get(url, params=params, headers=headers)
+
+    payload = {
+  'success_message': "“Travel+Wall+Charger+Type+C”+has+been+added+to+your+cart",
+  'product_sku': "travel_wall_charger_typec",
+  'product_id': "1232",
+  'quantity': "1"
+    }
+
+    headers = {
+  'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36",
+  'Accept': "application/json, text/javascript, */*; q=0.01",
+  'sec-ch-ua-platform': "\"Android\"",
+  'x-requested-with': "XMLHttpRequest",
+  'sec-ch-ua': "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+  'sec-ch-ua-mobile': "?1",
+  'origin': "https://silvercellwireless.com",
+  'sec-fetch-site': "same-origin",
+  'sec-fetch-mode': "cors",
+  'sec-fetch-dest': "empty",
+  'referer': "https://silvercellwireless.com/shop/page/2/",
+  'accept-language': "en-IN,en;q=0.9,bn-IN;q=0.8,bn;q=0.7,en-GB;q=0.6,en-US;q=0.5",
+  'priority': "u=1, i",
+    }
+
+    response = r.post(url, params=params, data=payload, headers=headers)
     
     url = "https://silvercellwireless.com/checkout/"
     headers = {
