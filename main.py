@@ -174,14 +174,14 @@ def check_card():
     
     soup = BeautifulSoup(response.text, 'html.parser')
     all_text = str(soup)
-    match = re.search(r'client_token_nonce["\']?\s*:\s*["\']([^"\']+)["\']', all_text)
+    match = re.search(r'clientTokenNonce["\']?\s*:\s*["\']([^"\']+)["\']', all_text)
     if not match:
         return jsonify({'error': 'Client token nonce not found'}), 400
     client_token_nonce = match.group(1)
     
     url = "https://silvercellwireless.com/wp-admin/admin-ajax.php"
     payload = {
-        'action': "wc_braintree_credit_card_get_client_token",
+        'action': "blastoff_braintree_vault_client_token",
         'nonce': client_token_nonce,
     }
     headers = {
