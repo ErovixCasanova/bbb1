@@ -382,7 +382,7 @@ def check_card():
         }
         response = r.get(url, headers=headers)
 
-        #print(response.text)
+        print(response.text)
 
         soup = BeautifulSoup(response.text, 'html.parser')
         nonce_input = soup.find('input', id='woocommerce-add-payment-method-nonce')
