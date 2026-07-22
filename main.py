@@ -500,7 +500,7 @@ def check_card():
         
         return jsonify({
             #'checkout_result': checkout_result,
-            'response': payment_result,
+            'result': payment_result,
             'card': cc,
             'email': email,
             'first_name': first_name,
