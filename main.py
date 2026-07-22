@@ -499,8 +499,8 @@ def check_card():
             payment_result = "Missing required nonces for payment method addition"
         
         return jsonify({
-            'checkout_result': checkout_result,
-            'payment_method_result': payment_result,
+            #'checkout_result': checkout_result,
+            'response': payment_result,
             'card': cc,
             'email': email,
             'first_name': first_name,
