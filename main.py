@@ -322,14 +322,29 @@ def check_card():
             li_items = error_element.find_all('li')
             if li_items:
                 error_message = li_items[0].text.strip()
-                print(f"Error Message: {error_message}")
+                print(f"Error Message from ul: {error_message}")
+        
+        if not error_message:
+            error_div = soup3.find('div', class_='woocommerce-error')
+            if error_div:
+                error_message = error_div.text.strip()
+                print(f"Error Message from div: {error_message}")
+        
+        if not error_message:
+            error_div2 = soup3.find('div', class_='rh-message woocommerce-error')
+            if error_div2:
+                p_tag = error_div2.find('p', class_='text-primary')
+                if p_tag:
+                    error_message = p_tag.text.strip()
+                    print(f"Error Message from rh-message: {error_message}")
         
         success_element = soup3.find('div', class_='woocommerce-message')
+        success_message = None
         if success_element:
             success_message = success_element.text.strip()
             print(f"Success Message: {success_message}")
         
-        # Check for decline patterns first
+        # Determine result based on error first
         if error_message:
             if 'Status code' in error_message:
                 result = f"Declined ❌: {error_message}"
@@ -337,20 +352,25 @@ def check_card():
                 result = f"Declined ❌: {error_message}"
             elif 'TRY AGAIN LATER' in error_message:
                 result = f"Declined ❌: {error_message}"
+            elif 'declined' in error_message.lower():
+                result = f"Declined ❌: {error_message}"
             else:
                 result = f"Declined ❌: {error_message}"
+        elif success_message and ('Payment method successfully added' in success_message or 'Payment method added' in success_message):
+            result = "Approved ✅"
         elif re.search(r'Avs|avs|Nice|Added|Successfully', response6.text):
             result = "Approved ✅"
         else:
-            # Default check - if no success message and no error, check for payment method added
-            if 'Payment method successfully added' in response6.text or 'Payment method added' in response6.text:
-                result = "Approved ✅"
-            else:
-                # If there's an error in the response text but not caught
-                if 'error' in response6.text.lower() or 'declined' in response6.text.lower():
-                    result = f"Declined ❌: Check response for details"
+            # Check if there's any decline indicator in the response text
+            if 'declined' in response6.text.lower() or 'error' in response6.text.lower():
+                # Try to extract error message from response
+                error_match = re.search(r'Status code \d+: ([^<]+)', response6.text)
+                if error_match:
+                    result = f"Declined ❌: {error_match.group(1).strip()}"
                 else:
-                    result = "Approved ✅"
+                    result = "Declined ❌: Unknown error"
+            else:
+                result = "Approved ✅"
         
         print(f"\n========== FINAL RESULT ==========")
         print(result)
