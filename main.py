@@ -329,14 +329,28 @@ def check_card():
             success_message = success_element.text.strip()
             print(f"Success Message: {success_message}")
         
-        if re.search(r'Avs|avs|Nice|Added|Successfully', response6.text):
-            result = "Approved-1000 ✅"
-        elif error_message and 'Status code' in error_message:
-            result = f"Declined: {error_message}"
-        elif error_message:
-            result = f"Declined: {error_message}"
+        # Check for decline patterns first
+        if error_message:
+            if 'Status code' in error_message:
+                result = f"Declined ❌: {error_message}"
+            elif 'Cannot Authorize' in error_message:
+                result = f"Declined ❌: {error_message}"
+            elif 'TRY AGAIN LATER' in error_message:
+                result = f"Declined ❌: {error_message}"
+            else:
+                result = f"Declined ❌: {error_message}"
+        elif re.search(r'Avs|avs|Nice|Added|Successfully', response6.text):
+            result = "Approved ✅"
         else:
-            result = "Approved-1000 ✅"
+            # Default check - if no success message and no error, check for payment method added
+            if 'Payment method successfully added' in response6.text or 'Payment method added' in response6.text:
+                result = "Approved ✅"
+            else:
+                # If there's an error in the response text but not caught
+                if 'error' in response6.text.lower() or 'declined' in response6.text.lower():
+                    result = f"Declined ❌: Check response for details"
+                else:
+                    result = "Approved ✅"
         
         print(f"\n========== FINAL RESULT ==========")
         print(result)
