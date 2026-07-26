@@ -137,13 +137,9 @@ def check_card():
             payment_nonce = nonce_input2.get('value')
         
         client_token_nonce = None
-        client_token_match = re.search(r'"client_token_nonce":"([^"]+)"', response3.text)
-        if client_token_match:
-            client_token_nonce = client_token_match.group(1)
-        else:
-            client_token_match2 = re.search(r'type":"credit_card","client_token_nonce":"([^"]+)"', response3.text)
-            if client_token_match2:
-                client_token_nonce = client_token_match2.group(1)
+        client_token_match2 = re.search(r'type":"credit_card","client_token_nonce":"([^"]+)"', response3.text)
+        if client_token_match2:
+            client_token_nonce = client_token_match2.group(1)
         
         print(f"Payment Nonce: {payment_nonce}")
         print(f"Client Token Nonce: {client_token_nonce}\n")
@@ -183,8 +179,12 @@ def check_card():
         if not ajax_response.get('success'):
             return jsonify({'error': 'AJAX request failed'}), 400
         
-        token_data = json.loads(base64.b64decode(ajax_response['data']).decode('utf-8'))
-        auth = token_data.get('authorizationFingerprint')
+        try:
+            token_data = json.loads(base64.b64decode(ajax_response['data']).decode('utf-8'))
+            auth = token_data.get('authorizationFingerprint')
+        except Exception as e:
+            return jsonify({'error': f'Failed to decode token data: {str(e)}'}), 400
+        
         braintree_session_id = ''.join(random.choices('abcdef0123456789', k=32))
         print(f"Auth: {auth[:50] if auth else 'None'}...\n")
         
@@ -233,18 +233,30 @@ def check_card():
         print(f"Response: {response5.text[:500]}")
         
         if response5.status_code != 200:
-            return jsonify({'error': f'Tokenization failed with status {response5.status_code}'}), 400
+            return jsonify({'error': f'Tokenization failed with status {response5.status_code}: {response5.text}'}), 400
         
-        tokenize_result = response5.json()
+        try:
+            tokenize_result = response5.json()
+        except Exception as e:
+            return jsonify({'error': f'Failed to parse tokenization response: {str(e)}'}), 400
+        
+        if not isinstance(tokenize_result, dict):
+            return jsonify({'error': f'Tokenization response is not a dictionary: {type(tokenize_result)}'}), 400
         
         if 'errors' in tokenize_result:
             return jsonify({'error': f'Tokenization errors: {tokenize_result["errors"]}'}), 400
         
         if 'data' not in tokenize_result:
-            return jsonify({'error': f'Unexpected response format: {tokenize_result}'}), 400
+            return jsonify({'error': f'Missing "data" key in response: {tokenize_result}'}), 400
+        
+        if not isinstance(tokenize_result['data'], dict):
+            return jsonify({'error': f'"data" is not a dictionary: {type(tokenize_result["data"])}'}), 400
         
         if 'tokenizeCreditCard' not in tokenize_result['data']:
-            return jsonify({'error': f'Missing tokenizeCreditCard in response: {tokenize_result["data"]}'}), 400
+            return jsonify({'error': f'Missing "tokenizeCreditCard" in data: {tokenize_result["data"]}'}), 400
+        
+        if not isinstance(tokenize_result['data']['tokenizeCreditCard'], dict):
+            return jsonify({'error': f'"tokenizeCreditCard" is not a dictionary: {type(tokenize_result["data"]["tokenizeCreditCard"])}'}), 400
         
         payment_token = tokenize_result['data']['tokenizeCreditCard'].get('token')
         if not payment_token:
