@@ -148,6 +148,9 @@ def check_card():
         print(f"Payment Nonce: {payment_nonce}")
         print(f"Client Token Nonce: {client_token_nonce}\n")
         
+        if not client_token_nonce:
+            return jsonify({'error': 'Failed to get client token nonce'}), 400
+        
         print("========== CURL 4: Get Client Token ==========")
         headers4 = {
             'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36',
@@ -175,10 +178,18 @@ def check_card():
         print(f"Status: {response4.status_code}")
         
         ajax_response = response4.json()
+        print(f"AJAX Response: {ajax_response}")
+        
+        if not ajax_response.get('success'):
+            return jsonify({'error': 'AJAX request failed'}), 400
+        
         token_data = json.loads(base64.b64decode(ajax_response['data']).decode('utf-8'))
         auth = token_data.get('authorizationFingerprint')
         braintree_session_id = ''.join(random.choices('abcdef0123456789', k=32))
-        print(f"Auth: {auth[:50]}...\n")
+        print(f"Auth: {auth[:50] if auth else 'None'}...\n")
+        
+        if not auth:
+            return jsonify({'error': 'Failed to get authorization fingerprint'}), 400
         
         print("========== CURL 5: Tokenize Card ==========")
         headers5 = {
@@ -219,20 +230,33 @@ def check_card():
         
         response5 = r.post('https://payments.braintree-api.com/graphql', json=tokenize_payload, headers=headers5)
         print(f"Status: {response5.status_code}")
+        print(f"Response: {response5.text[:500]}")
+        
+        if response5.status_code != 200:
+            return jsonify({'error': f'Tokenization failed with status {response5.status_code}'}), 400
         
         tokenize_result = response5.json()
         
         if 'errors' in tokenize_result:
-            return jsonify({'error': f'Tokenization failed: {tokenize_result["errors"]}'}), 400
+            return jsonify({'error': f'Tokenization errors: {tokenize_result["errors"]}'}), 400
         
-        if 'data' not in tokenize_result or 'tokenizeCreditCard' not in tokenize_result['data']:
-            return jsonify({'error': 'Unexpected tokenization response format'}), 400
+        if 'data' not in tokenize_result:
+            return jsonify({'error': f'Unexpected response format: {tokenize_result}'}), 400
         
-        payment_token = tokenize_result['data']['tokenizeCreditCard']['token']
+        if 'tokenizeCreditCard' not in tokenize_result['data']:
+            return jsonify({'error': f'Missing tokenizeCreditCard in response: {tokenize_result["data"]}'}), 400
+        
+        payment_token = tokenize_result['data']['tokenizeCreditCard'].get('token')
+        if not payment_token:
+            return jsonify({'error': 'Failed to get payment token'}), 400
+        
         print(f"Payment Token: {payment_token}\n")
         
         correlation_id = ''.join(random.choices('abcdef0123456789', k=24))
         print(f"Correlation ID: {correlation_id}\n")
+        
+        if not payment_nonce:
+            return jsonify({'error': 'Missing payment nonce'}), 400
         
         print("========== CURL 6: Submit Add Payment Method ==========")
         headers6 = {
@@ -315,6 +339,8 @@ def check_card():
         
     except Exception as e:
         print(f"Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/health', methods=['GET'])
