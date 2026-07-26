@@ -346,7 +346,6 @@ def check_card():
                 success_message = success_element.text.strip()
                 print(f"Success Message: {success_message}")
             
-            # Return error message and success message for processing
             return {
                 'error_message': error_message,
                 'success_message': success_message,
@@ -359,7 +358,6 @@ def check_card():
             traceback.print_exc()
             return {'error': str(e)}, 500
     
-    # First attempt
     result_data, status_code = process_payment()
     
     if status_code != 200:
@@ -369,13 +367,11 @@ def check_card():
     success_message = result_data.get('success_message')
     response_text = result_data.get('response_text', '')
     
-    # Check if we need to retry due to "wait 20 seconds" error
     if error_message and ('You cannot add a new payment method so soon' in error_message or 'Please wait for 20 seconds' in error_message):
         print("\n========== WAITING 12 SECONDS BEFORE RETRY ==========")
         time.sleep(12)
         print("========== RETRYING PAYMENT ==========\n")
         
-        # Retry the payment process
         result_data, status_code = process_payment()
         
         if status_code != 200:
@@ -385,9 +381,10 @@ def check_card():
         success_message = result_data.get('success_message')
         response_text = result_data.get('response_text', '')
     
-    # Determine final result
     if error_message:
-        if 'Status code' in error_message:
+        if 'Status code avs' in error_message or 'Gateway Rejected: avs' in error_message:
+            result = "Approved ✅"
+        elif 'Status code' in error_message:
             result = f"Declined ❌: {error_message}"
         elif 'Cannot Authorize' in error_message:
             result = f"Declined ❌: {error_message}"
