@@ -382,7 +382,7 @@ def check_card():
         response_text = result_data.get('response_text', '')
     
     if error_message:
-        if 'Status code avs' in error_message or 'Gateway Rejected: avs' in error_message:
+        if 'Status code avs: Gateway Rejected: avs' in error_message or 'Gateway Rejected: avs' in error_message:
             result = "Approved ✅"
         elif 'Status code' in error_message:
             result = f"Declined ❌: {error_message}"
